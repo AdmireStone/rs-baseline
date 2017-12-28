@@ -11,22 +11,29 @@ def predict(x,w0,W,V,sampler):
     :param W:
     :param V:
     :return:
+    如果x里面只有两个维度不是0，那么二次项计算，实际上只是这两个维度的交互。
+    1. 获取x中非零元素下标
+    2. 获取
     '''
-    start = time.time()
-    Z=np.dot(V,V.T)
-    end1 = time.time() - start
+    #ndarray [a,b]
+    indx_feature=np.where(x==1)[0]
+    num_features=len(indx_feature)
 
-    dia=Z.diagonal().reshape(1,-1) # (1,n) array
-    assert dia.shape[0]==1
+    qudratic_term=0.0
+    for i in xrange(0,num_features-1):
+        for j in xrange(i+1,num_features):
+            v_feacture_1 = V[indx_feature[i]]
+            v_feacture_2 = V[indx_feature[j]]
+            qudratic_term += np.dot(v_feacture_1,v_feacture_2.T)
 
-    start = time.time()
-    y=w0+np.dot(W.T,x)+0.5*(np.sum((Z*np.dot(x,x.T)))-np.dot(dia,(x**2)))
-    end2 = time.time() - start
+
+    linear_term = np.sum(W[indx_feature])
+
+    y= w0 + linear_term + qudratic_term
 
     ## 回归的时候，确保不超出范围
     y = max(sampler.min_target,y)
     y = min(sampler.max_target, y)
-    print "(V,V.T)={0},y={1},total={2}".format(end1,end2,end1+end2)
 
     return y
 
@@ -45,10 +52,8 @@ def update_factors(w0,W,V,reg_w,reg_v,eta,x,y,sampler):
     '''
     assert x.shape[1]==1
 
-    start=time.time()
-    y_p=predict(x,w0,W,V,sampler)
-    print "predict time:{0}".format(time.time()-start)
 
+    y_p=predict(x,w0,W,V,sampler)
 
     error=2*(y_p-y)
 
@@ -56,27 +61,35 @@ def update_factors(w0,W,V,reg_w,reg_v,eta,x,y,sampler):
     w0-=eta*(1*error+2*w0*reg_w)
 
     # update w
-    start = time.time()
     W-=eta*(x*error+2*W*reg_w)
-    print "W time:{0}".format(time.time() - start)
+
 
     temp=sp.csr_matrix(W)
 
     # update V
-    start = time.time()
-    deta=np.dot(np.dot(x,x.T),V)-V*(x**2)
-    print "deta time:{0}".format(time.time() - start)
+    # V的更新实际上也涉及到一些矩阵相乘，但是其实，每次只有不为零的那些维度对应的V需要更新
+    #
+    indx_feature = np.where(x == 1)[0]
+    num_features=len(indx_feature)
+    num_factors=V.shape[1]
+    v_deat=np.zeros((num_features,num_factors))
+    for col in xrange(0,num_factors):
+        v_deat[:col] = np.sum(V[:,col][indx_feature])
+        v_deat[:col] -=V[:col]
 
-    assert deta.shape==V.shape
-    start = time.time()
-    V-=eta*(deta*error+2*V*reg_v)
-    print "v time:{0}".format(time.time() - start)
+    # deta=np.dot(np.dot(x,x.T),V)-V*(x**2)
+    # assert deta.shape==V.shape
+    # V-=eta*(deta*error+2*V*reg_v)
 
 def init(num_factors,num_attribute,init_stdev,seed):
     W = np.zeros(num_attribute).reshape(-1,1)
     np.random.seed(seed=seed)
     V = np.random.normal(scale=init_stdev, size=(num_attribute, num_factors))
     return W,V
+
+# todo
+def loss():
+    return 0.0
 
 def train(sampler,hyper_args):
     """train model
@@ -113,7 +126,6 @@ def train(sampler,hyper_args):
             x=np.zeros((total_dim,))
             x[u]=1
             x[sampler.num_users+i]=1
-
             x=x.reshape(-1,1)
             up_start=time.time()
             update_factors(w0,W,V,reg_w,reg_v,eta,x,y,sampler)
