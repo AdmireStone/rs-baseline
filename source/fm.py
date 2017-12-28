@@ -12,7 +12,6 @@ def predict(x,w0,W,V,sampler):
     :param V:
     :return:
     '''
-    return 0
     start = time.time()
     Z=np.dot(V,V.T)
     end1 = time.time() - start
@@ -173,7 +172,6 @@ class Data_Generator(object):
             y = self.train_y [idx]
             idx += 1
             yield u, i, y
-
 
 
 if __name__=="__main__":
