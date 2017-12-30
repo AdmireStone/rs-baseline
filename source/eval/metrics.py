@@ -189,26 +189,12 @@ def predic_map_bpr(user_factors, item_factors, k_arr):
 
     return dict_MAP
 
-def predic_map_FM_like(W, Z, k_arr):
+def predic_map_FM_like(W, Z):
     users_unique, data, train_data, items_set = load_test_required_data()
-    total_map = 0.0
-    context_num = len(users_unique)
-    # file_name="/home/zju/dgl/dataset/recommend/ml-100k/12_20_22_44/u1_iter_59_save_weight.pkl"
-    # W,Z=loadB2bModel(weight_file)
-
-    dict_MAP={}
-    if k_arr !=None:
-        for k in k_arr:
-            dict_MAP[str(k)]=0.0
-    else:
-        dict_MAP['all'] = 0.0
-
+    MAP=0.0
     for u in users_unique:
 
         ground_items = set(data[u].indices)
-        # if k > len(ground_items):
-        #     print "ground_items size={0},user={1}".format(len(ground_items), u)
-
         # 获取当前用户在训练数据集中的正标签
         train_pos = set(train_data[u].indices)
 
@@ -222,23 +208,9 @@ def predic_map_FM_like(W, Z, k_arr):
         # user_maps = getSingleMAPScore(ground_items, eval_items_list, score_list, k_arr)
         score_list_dic={str(item):score for item,score in zip(eval_items_list,score_list)}
         user_maps = score_AP (score_list_dic, ground_items, train_pos)
-
-    # todo
-    #     # try:
-    #     for key in user_maps.keys():
-    #         dict_MAP[key]+=user_maps[key]
-    #     # except KeyError:
-    #     #     print "KeyError,u={0},key={1}".format(u,key)
-    #         # print
-    #
-    # if k_arr !=None:
-    #     for k in k_arr:
-    #         dict_MAP[str(k)] /= context_num
-    # else:
-    #     dict_MAP['all'] /=  context_num
-
-
-    return dict_MAP
+        MAP+=user_maps
+    MAP/=len(users_unique)
+    return MAP
 
 
 def score_AP(score_list,ground_truth_items,exclued_items=None):

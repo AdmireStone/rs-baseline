@@ -28,16 +28,16 @@ def loadPrfmModel():
 
 if __name__=="__main__":
 
-    weight_file="/Users/dong/Desktop/BoostingFM-IJCAI18/dataset/ml-100k/12_17_20_51/models/u1_iter_63_save_weight.pkl"
-    # #
-    W,Z=loadB2bModel(weight_file)
-    all_map=predic_map_FM_like(W, Z, None)
-    print 'b2b',all_map
+    # weight_file="/Users/dong/Desktop/BoostingFM-IJCAI18/dataset/ml-100k/12_17_20_51/models/u1_iter_63_save_weight.pkl"
+    # # # 0.1582
+    # W,Z=loadB2bModel(weight_file)
+    # all_map=predic_map_FM_like(W, Z)
+    # print 'b2b',all_map
 
 
-    # prfm_W, prfm_Z = loadPrfmModel()
-    # all_map_prfm=predic_map_FM_like(prfm_W, prfm_Z, [1,3,5])
-    # print 'prfm',all_map_prfm
+    prfm_W, prfm_Z = loadPrfmModel()
+    all_map_prfm=predic_map_FM_like(prfm_W, prfm_Z)
+    print 'prfm',all_map_prfm
 
     # user_factors, item_factors = loadKerasModel()
     # all_map = predic_map_bpr(user_factors, item_factors, [1,3,5])
