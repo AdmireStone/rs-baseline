@@ -237,7 +237,34 @@ def predic_map_FM_like(W, Z, k_arr):
     return dict_MAP
 
 
-def mean_avg_precision(score_list,ground_truth_items,k_arr,exclued_items=None):
+def getAP(score_list,ground_truth_items,exclued_items=None):
+    '''
+    基于ground_truth_items在items_rank_list中的index来计算
+    :param score_list: a dict, holding the score of each item for the a certain context(user),{"str(item_id)":score} ...
+                      e.g {"1":12.3,"2":16.3}
+    :param ground_truth_items: the ground truth item list, all the items in which should be recommend
+    :param exclued_items:  the items, which one does not want to be considered. like the items in the train data
+    :return: average_precision
+    '''
+    if exclued_items !=None:
+        for item_id in exclued_items:
+            score_list.pop(str(item_id))
+
+    # list e.g [('1',12.),('2',12)]
+    score_list_ordered = sorted(score_list.iteritems(), key=lambda d:d[1], reverse=True)
+
+    items_rank_list = [ int(user_score[0]) for user_score in score_list_ordered]
+
+    idx_ground_truth  = [items_rank_list.index(item) for item in ground_truth_items]
+
+    num_precision=0.0
+    for cut_off in idx_ground_truth:
+         num_precision += 1.*(len(set(items_rank_list[:cut_off+1]) & set(ground_truth_items)))/(cut_off+1)
+    average_precision = num_precision*1./len(idx_ground_truth)
+
+    return average_precision
+
+def mean_avg_precision(score_list,ground_truth_items,exclued_items=None):
     '''
     :param score_list: a dict, holding the score of each item for the a certain context(user),{"str(item_id)":score} ...
                       e.g {"1":12.3,"2":16.3}
@@ -250,85 +277,18 @@ def mean_avg_precision(score_list,ground_truth_items,k_arr,exclued_items=None):
     2. 对sore_list 按照值的大小排序，降序
     3. 统计前K元素的命中率
     '''
-
-
-    if exclued_items !=None:
-        for item_id in exclued_items:
-            score_list.pop(str(item_id))
-
-    # list e.g [('1',12.),('2',12)]
-    score_list_ordered = sorted(score_list.iteritems(), key=lambda d:d[1], reverse=True)
-
-    items_rank_list = [ int(user_score[0]) for user_score in score_list_ordered]
-
-    map_arr = {}
-
-    if k_arr==None:
-        k=len(ground_truth_items)
-        num_precision = len(set(items_rank_list[:k]) & set(ground_truth_items))
-        map_arr['all']=(num_precision*1.) / k
-
-    else:
-        for k in k_arr:
-            true_k = k
-            if k > len(ground_truth_items):
-                k = len(ground_truth_items)
-            # 求前items_rank_list中前k个元素，与 ground_truth_items的交集
-            num_precision = len(set(items_rank_list[:k]) & set(ground_truth_items))
-            map_arr[str(true_k)] = (num_precision*1.) / true_k
-
-    return map_arr
-
-
-# def pre_rec(score_list,ground_truth_items,k_arr,exclued_items=None):
-#     '''
-#     计算准确率和查询率
-#     :param score_list: a dict, holding the score of each item for the a certain context(user),{"str(item_id)":score} ...
-#                       e.g {"1":12.3,"2":16.3}
-#     :param ground_truth_items: the ground truth item list, all the items in which should be recommend
-#     :param exclued_items:  the items, which one does not want to be considered. like the items in the train data
-#     :param k_arr: an array or list,denoting how many items one want to evaluate e.g. [1,3,5]
-#     :return (pre,rec): two dicts，respond to precision and recall  e.g pre={"1":0.3,"3":0.5,"5":0.6}
-#
-#     1. 如果exclued_items不是空，则需要从sore_list删掉exclued_items对应的元素
-#     2. 对sore_list 按照值的大小排序，降序
-#     3. 统计前K元素的命中率
-#     '''
-#     if exclued_items !=None:
-#         for item_id in exclued_items:
-#             score_list.pop(str(item_id))
-#
-#     # list e.g [('1',12.),('2',12)]
-#     score_list_ordered = sorted(score_list.iteritems(), key=lambda d:d[1], reverse=True)
-#
-#     items_rank_list = [ int(user_score[0]) for user_score in score_list_ordered]
-#
-#     pre_arr={}
-#     rec_arr = {}
-#
-#     for k in k_arr:
-#         true_k = k
-#         if k > len(ground_truth_items):
-#             k = len(ground_truth_items)
-#
-#         # 求前items_rank_list中前k个元素，与 ground_truth_items的交集
-#         num_precision = len(set(items_rank_list[:k]) & set(ground_truth_items))
-#         map_arr[str(true_k)] = (num_precision*1.) / true_k
-#
-#     return map_arr
+    pass
 
 
 
-def test_mean_avg_precision():
+def test_getAP():
 
     score_list={'0':12.2,'1':9.7,'3':10,'4':0.6,'5':0.2,'6':0.8,'7':120,}
     ground_truth_items=[1,4,3]
     exclued_items=None
-    k_arr=[1,2,3]
-    print  mean_avg_precision(score_list, ground_truth_items, None, exclued_items)
+    print  getAP(score_list, ground_truth_items,exclued_items)
 
 
 
 if __name__=="__main__":
-
-    test_mean_avg_precision()
+    test_getAP()
